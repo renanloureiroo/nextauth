@@ -16,7 +16,8 @@ type SignInCredentials = {
 }
 
 type AuthContextData = {
-  signIn(credentials: SignInCredentials): Promise<void>
+  signIn: (credentials: SignInCredentials) => Promise<void>
+  singOut: () => void
   isAuthenticated: boolean
   user: User
 }
@@ -27,9 +28,13 @@ type AuthContextProviderProps = {
 
 const AuthContext = createContext({} as AuthContextData)
 
+let authChannel: BroadcastChannel
+
 function singOut() {
   destroyCookie(undefined, "nextauth.token")
   destroyCookie(undefined, "nextauth.refreshToken")
+
+  authChannel.postMessage("signOut")
 
   Router.push("/")
 }
@@ -37,6 +42,20 @@ function singOut() {
 const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
   const [user, setUser] = useState<User>()
   const isAuthenticated = !!user
+
+  useEffect(() => {
+    authChannel = new BroadcastChannel("auth")
+
+    authChannel.onmessage = (message) => {
+      switch (message.data) {
+        case "signOut":
+          singOut()
+          break
+        default:
+          break
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const { "nextauth.token": token } = parseCookies()
@@ -95,7 +114,7 @@ const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, signIn, user }}>
+    <AuthContext.Provider value={{ isAuthenticated, signIn, user, singOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -37,22 +37,17 @@ function setupAPIClient(ctx = undefined) {
                 refreshToken,
               })
               .then((response) => {
-                const { token } = response.data
+                const { token, refreshToken } = response.data
 
                 setCookie(ctx, "nextauth.token", token, {
                   maxAge: 60 * 60 * 24 * 30,
                   path: "/",
                 })
 
-                setCookie(
-                  ctx,
-                  "nextauth.refreshToken",
-                  response.data.refreshToken,
-                  {
-                    maxAge: 60 * 60 * 24 * 30,
-                    path: "/",
-                  }
-                )
+                setCookie(ctx, "nextauth.refreshToken", refreshToken, {
+                  maxAge: 60 * 60 * 24 * 30,
+                  path: "/",
+                })
 
                 api.defaults.headers["Authorization"] = `Bearer ${token}`
 
